@@ -582,6 +582,8 @@ void prettyprint_ich_descriptor_component(enum ich_chipset cs, const struct ich_
 void prettyprint_ich_descriptor_region(const struct ich_descriptors *desc);
 void prettyprint_ich_descriptor_master(const struct ich_desc_master *master);
 
+void layout_from_ich_descriptor_region(const struct ich_descriptors *desc);
+
 #ifdef ICH_DESCRIPTORS_FROM_DUMP
 
 void prettyprint_ich_descriptor_upper_map(const struct ich_desc_upper_map *umap);

@@ -588,6 +588,9 @@ struct spi_master {
 		   const unsigned char *writearr, unsigned char *readarr);
 	int (*multicommand)(struct flashctx *flash, struct spi_command *cmds);
 
+	/* Get descriptor */
+	int (*get_descriptor)(const struct flashctx *flash);
+
 	/* Optimized functions for this master */
 	int (*read)(struct flashctx *flash, uint8_t *buf, unsigned int start, unsigned int len);
 	int (*write_256)(struct flashctx *flash, const uint8_t *buf, unsigned int start, unsigned int len);
@@ -663,6 +666,10 @@ struct opaque_master {
 	int (*read) (struct flashctx *flash, uint8_t *buf, unsigned int start, unsigned int len);
 	int (*write) (struct flashctx *flash, const uint8_t *buf, unsigned int start, unsigned int len);
 	int (*erase) (struct flashctx *flash, unsigned int blockaddr, unsigned int blocklen);
+
+	/* Get descriptor */
+	int (*get_descriptor)(const struct flashctx *flash);
+
 	const void *data;
 };
 int register_opaque_master(const struct opaque_master *mst);

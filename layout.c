@@ -40,8 +40,8 @@
 #define MAX_NESTING_LVL 5
 
 /* rom_entries store the entries specified in a layout file and associated run-time data */
-static romentry_t rom_entries[MAX_ROMLAYOUT];
-static int num_rom_entries = 0; /* the number of successfully parsed rom_entries */
+romentry_t rom_entries[MAX_ROMLAYOUT];
+int num_rom_entries = 0; /* the number of successfully parsed rom_entries */
 
 /* include_args holds the arguments specified at the command line with -i. They must be processed at some point
  * so that desired regions are marked as "included" in the rom_entries list. */
@@ -633,6 +633,7 @@ int build_new_image(struct flashctx *flash, bool oldcontents_valid, uint8_t *old
 					 size - start);
 			break;
 		}
+		msg_cinfo("Got entry \"%s\" [0x%08"PRIx32":0x%08"PRIx32"]\n", entry->name, entry->start, entry->end);
 		/* For non-included region, copy from old content. */
 		if (entry->start > start)
 			copy_old_content(flash, oldcontents_valid, oldcontents, newcontents, start,

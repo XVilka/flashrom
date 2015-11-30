@@ -233,6 +233,32 @@ int fl_load_layout(const fl_flashctx_t *const flashctx, const char* layout_file,
 	return result;
 }
 
+int ich_spi_get_descriptor(const fl_flashctx_t *flash);
+
+int fl_get_layout_from_descriptor(const fl_flashctx_t *const flashctx, char* region_names)
+{
+	msg_cinfo("Registering arguments...\n");
+	register_include_arg(region_names);
+	msg_cinfo("Reading descriptor...\n");
+	if (flashctx->mst != NULL) {
+		if (flashctx->mst->buses_supported & BUS_SPI) {
+			if (((struct registered_master*)(&flashctx->mst))->spi.get_descriptor != NULL) {
+				msg_cinfo("Calling the function using 'spi' master...\n");
+				ich_spi_get_descriptor(flashctx);
+			}
+		} else if (flashctx->mst->buses_supported & BUS_PROG) {
+			if (((struct registered_master*)(&flashctx->mst))->opaque.get_descriptor != NULL) {
+				msg_cinfo("Calling the function using 'opaque' master...\n");
+				ich_spi_get_descriptor(flashctx);
+				//(&((struct registered_master*)(&flashctx->mst))->opaque)->get_descriptor(flashctx);
+			}
+		}
+	}
+	msg_cinfo("Processing arguments...\n");
+	int result = process_include_args();
+	return result;
+}
+
 /** @private */
 int erase_and_write_flash(struct flashctx *flash, uint8_t *oldcontents, uint8_t *newcontents);
 /** @private */

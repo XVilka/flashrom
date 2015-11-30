@@ -22,6 +22,7 @@
 #if defined(__i386__) || defined(__x86_64__)
 
 #include "ich_descriptors.h"
+#include <string.h>
 
 #ifdef ICH_DESCRIPTORS_FROM_DUMP
 
@@ -235,7 +236,7 @@ void prettyprint_ich_descriptor_component(enum ich_chipset cs, const struct ich_
 static void pprint_freg(const struct ich_desc_region *reg, uint32_t i)
 {
 	static const char *const region_names[5] = {
-		"Descr.", "BIOS", "ME", "GbE", "Platf."
+		"descr.", "bios", "me", "gbe", "platf."
 	};
 	if (i >= 5) {
 		msg_pdbg2("%s: region index too high.\n", __func__);
@@ -248,6 +249,38 @@ static void pprint_freg(const struct ich_desc_region *reg, uint32_t i)
 		msg_pdbg2("is unused.\n");
 	else
 		msg_pdbg2("0x%08x - 0x%08x\n", base, limit | 0x0fff);
+}
+
+#define MAX_ROMLAYOUT 32
+extern romentry_t rom_entries[MAX_ROMLAYOUT];
+extern int num_rom_entries;
+
+void layout_from_ich_descriptor_region(const struct ich_descriptors *desc)
+{
+	static const char *const region_names[5] = {
+		"descr", "bios", "me", "gbe", "platf"
+	};
+	uint8_t i;
+	uint8_t nr = desc->content.NR + 1;
+	if (nr > 5) {
+		msg_pdbg2("%s: number of regions too high (%d).\n", __func__,
+			 nr);
+		return;
+	}
+	for (i = 0; i < nr; i++) {
+		uint32_t base = ICH_FREG_BASE(desc->region.FLREGs[i]);
+		uint32_t limit = ICH_FREG_LIMIT(desc->region.FLREGs[i]);
+		rom_entries[i].start = base;
+		rom_entries[i].end = limit | 0x0fff;
+		rom_entries[i].start_topalign = false;
+		rom_entries[i].end_topalign = false;
+		rom_entries[i].included = false;
+		rom_entries[i].name = strdup(region_names[i]);
+		rom_entries[i].file = NULL;
+		msg_pdbg2("Added [%d] region %s [0x%08x:0x%08x]\n", i, rom_entries[i].name,
+			rom_entries[i].start, rom_entries[i].end);
+	}
+	num_rom_entries = nr;
 }
 
 void prettyprint_ich_descriptor_region(const struct ich_descriptors *desc)

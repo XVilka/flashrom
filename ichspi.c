@@ -1530,12 +1530,23 @@ static void ich9_set_pr(int i, int read_prot, int write_prot)
 	msg_gspew("resulted in 0x%08x.\n", mmio_readl(addr));
 }
 
+int ich_spi_get_descriptor(const struct flashctx *flash)
+{
+	struct ich_descriptors desc;
+	msg_cinfo("Reading descriptor registers..\n");
+	read_ich_descriptors_via_fdo(ich_spibar, &desc);
+	msg_cinfo("Calculating layout from those registers...\n");
+	layout_from_ich_descriptor_region(&desc);
+	return 0;
+}
+
 static const struct spi_master spi_master_ich7 = {
 	.type = SPI_CONTROLLER_ICH7,
 	.max_data_read = 64,
 	.max_data_write = 64,
 	.command = ich_spi_send_command,
 	.multicommand = ich_spi_send_multicommand,
+	.get_descriptor = NULL,
 	.read = default_spi_read,
 	.write_256 = default_spi_write_256,
 	.write_aai = default_spi_write_aai,
@@ -1547,6 +1558,7 @@ static const struct spi_master spi_master_ich9 = {
 	.max_data_write = 64,
 	.command = ich_spi_send_command,
 	.multicommand = ich_spi_send_multicommand,
+	.get_descriptor = ich_spi_get_descriptor,
 	.read = default_spi_read,
 	.write_256 = default_spi_write_256,
 	.write_aai = default_spi_write_aai,
@@ -1559,6 +1571,7 @@ static const struct opaque_master opaque_master_ich_hwseq = {
 	.read = ich_hwseq_read,
 	.write = ich_hwseq_write,
 	.erase = ich_hwseq_block_erase,
+	.get_descriptor = ich_spi_get_descriptor,
 };
 
 int ich_init_spi(struct pci_dev *dev, void *spibar, enum ich_chipset ich_gen)
