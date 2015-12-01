@@ -1627,6 +1627,7 @@ int erase_and_write_flash(struct flashctx *flash, uint8_t *oldcontents, uint8_t 
 {
 	int k, ret = 1;
 	uint8_t *curcontents;
+	romentry_t *e;
 	unsigned long size = flash->chip->total_size * 1024;
 	unsigned int usable_erasefunctions = count_usable_erasers(flash);
 
@@ -1664,14 +1665,30 @@ int erase_and_write_flash(struct flashctx *flash, uint8_t *oldcontents, uint8_t 
 		/* Reading the whole chip may take a while, inform the user even
 		 * in non-verbose mode.
 		 */
-		msg_cinfo("Reading current flash chip contents... ");
-		if (flash->chip->read(flash, curcontents, 0, size)) {
-			/* Now we are truly screwed. Read failed as well. */
-			msg_cerr("Can't read anymore! Aborting.\n");
-			/* We have no idea about the flash chip contents, so
-			 * retrying with another erase function is pointless.
-			 */
-			break;
+		msg_cinfo("Reading current flash chip contents... \n");
+		/* Now we need to check if the chip was layouted */
+		e = get_next_included_romentry(0);
+		if (e == NULL) {
+			if (flash->chip->read(flash, curcontents, 0, size)) {
+				/* Now we are truly screwed. Read failed as well. */
+				msg_cerr("Can't read anymore! Aborting.\n");
+				/* We have no idea about the flash chip contents, so
+				 * retrying with another erase function is pointless.
+				 */
+				break;
+			}
+		} else {
+			unsigned int len = e->end - e->start + 1;
+			msg_gdbg2("Reading region \"%s\" 0x%08x 0 0x%08x (%uB)...\n", e->name,
+				e->start, e->end, len);
+			if (flash->chip->read(flash, curcontents + e->start, e->start, len)) {
+				/* Now we are truly screwed. Read failed as well. */
+				msg_cerr("Can't read anymore! Aborting.\n");
+				/* We have no idea about the flash chip contents, so
+				 * retrying with another erase function is pointless.
+				 */
+				break;
+			}
 		}
 		msg_cinfo("done. ");
 	}
@@ -2139,7 +2156,7 @@ int doit(struct flashctx *flash, int force, const char *filename, int read_it,
 		if (read_all_first) {
 			msg_cerr("Checking if anything has changed.\n");
 			msg_cinfo("Reading current flash chip contents... ");
-			if (!flash->chip->read(flash, newcontents, 0, size)) {
+			if (!read_flash_to_buf(flash, newcontents, NULL)) {
 				msg_cinfo("done.\n");
 				if (!memcmp(oldcontents, newcontents, size)) {
 					nonfatal_help_message();

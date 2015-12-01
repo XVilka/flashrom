@@ -412,8 +412,8 @@ int fl_image_write(fl_flashctx_t *const flashctx, void *const buffer, const size
 	build_new_image(flashctx, read_all_first, oldcontents, newcontents);
 
 	if (erase_and_write_flash(flashctx, oldcontents, newcontents)) {
-		msg_cerr("Uh oh. Erase/write failed. Checking if anything changed.\n");
-		if (!flashctx->chip->read(flashctx, newcontents, 0, flash_size)) {
+		msg_cerr("Uh oh. Erase/write failed. Checking if anything has changed.\n");
+		if (!read_flash_to_buf(flashctx, newcontents, structure)) {
 			if (!memcmp(oldcontents, newcontents, flash_size)) {
 				msg_cinfo("Good. It seems nothing was changed.\n");
 				nonfatal_help_message();
